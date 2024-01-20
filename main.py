@@ -124,13 +124,15 @@ def menu():
     titre = font_menu.render("Rogue-like en Python", True, noir)
     play_button = pygame.Rect(300, 250, 200, 50)
     quit_button = pygame.Rect(300, 350, 200, 50)
+    play_color = rouge
+    quit_color = rouge
 
     while True:
         fenetre.fill(blanc)
         fenetre.blit(titre, (200, 150))
 
-        pygame.draw.rect(fenetre, rouge, play_button)
-        pygame.draw.rect(fenetre, rouge, quit_button)
+        pygame.draw.rect(fenetre, play_color, play_button)
+        pygame.draw.rect(fenetre, quit_color, quit_button)
 
         texte_play = font_menu.render("PLAY", True, blanc)
         texte_quit = font_menu.render("QUIT", True, blanc)
@@ -149,6 +151,17 @@ def menu():
                 elif quit_button.collidepoint(event.pos):
                     pygame.quit()
                     quit()
+            elif event.type == pygame.MOUSEMOTION:
+                if play_button.collidepoint(event.pos):
+                    play_color = (255, 0, 0)  # Rouge
+                else:
+                    play_color = (0, 255, 0)  # Vert
+
+                if quit_button.collidepoint(event.pos):
+                    quit_color = (255, 0, 0)  # Rouge
+                else:
+                    quit_color = (0, 255, 0)  # Vert
+
 
 # Fonction principale du jeu
 def jouer():
