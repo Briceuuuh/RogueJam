@@ -23,7 +23,7 @@ win = pygame.mixer.Sound("song/win.mp3")
 # Couleurs
 blanc = (255, 255, 255)
 noir = (0, 0, 0)
-rouge = (255, 0, 0)
+rouge = (255, 128, 0)
 
 # Création de la fenêtre du jeu
 fenetre = pygame.display.set_mode((largeur_fenetre, hauteur_fenetre))
