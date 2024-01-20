@@ -55,6 +55,10 @@ class Tir:
 # Classe pour représenter le joueur
 class Joueur:
     def __init__(self, vitesse_tir_joueur=100.0, delai_tir_joueur=0):
+        self.image_original = pygame.image.load("player.png")
+        self.image_original = pygame.transform.scale(self.image_original, (taille_case, taille_case))
+        self.image = self.image_original.copy() 
+        self.rect = self.image.get_rect()
         self.x = random.randint(0, nombre_colonnes - 1)
         self.y = random.randint(0, nombre_lignes - 1)
         self.dx = 0
@@ -64,7 +68,9 @@ class Joueur:
         self.tirs = []
         self.vitesse_tir_joueur = vitesse_tir_joueur
         self.temps_dernier_tir = pygame.time.get_ticks()
-        self.delai_tir_joueur = delai_tir_joueur 
+        self.delai_tir_joueur = delai_tir_joueur
+        self.angle = 0  # Nouvelle propriété pour l'angle de rotation
+        self.vitesse_rotation = 2
 
     def deplacer(self):
         self.x += self.dx * self.vitesse
@@ -72,9 +78,18 @@ class Joueur:
         self.x = max(0, min(self.x, nombre_colonnes - 1))
         self.y = max(0, min(self.y, nombre_lignes - 1))
 
+    def tourner(self, angle):
+        # Mettre à jour l'angle du joueur
+        self.angle += angle
+
     def perdre_vie(self, points):
         self.vie -= points
         self.vie = max(0, self.vie)
+
+    def obtenir_image_rotated(self):
+        # Faire une rotation de l'image originale en fonction de l'angle
+        rotated_image = pygame.transform.rotate(self.image_original, -self.angle)
+        return rotated_image
 
 # Classe pour représenter un ennemi
 class Ennemi:
@@ -130,7 +145,7 @@ class Ennemi:
 def dessiner_entites(joueur, ennemis):
     fenetre.fill(blanc)
 
-    pygame.draw.rect(fenetre, noir, (joueur.x * taille_case, joueur.y * taille_case, taille_case, taille_case))
+    fenetre.blit(joueur.image, (joueur.x * taille_case, joueur.y * taille_case))
 
     for tir in joueur.tirs:
         pygame.draw.circle(fenetre, noir, (int(tir.x), int(tir.y)), 5)
@@ -198,7 +213,7 @@ def mapOne():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.mixer.music.stop()  # Stop the music before quitting
-                pygame.quit()
+                jouer()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     joueur.dy = -1
@@ -230,6 +245,8 @@ def mapOne():
         for tir in joueur.tirs:
             tir.deplacer()
 
+        joueur.tourner(2)
+
         for ennemi in ennemis:
             ennemi.suivre_joueur(joueur)
             ennemi.gestion_collision_ennemis(ennemis)
@@ -242,6 +259,8 @@ def mapOne():
 
         joueur.deplacer()
         gestion_collisions(joueur, ennemis)
+
+        joueur.image = joueur.obtenir_image_rotated()
 
         dessiner_entites(joueur, ennemis)
 
@@ -261,7 +280,7 @@ def mapOne():
 
 def mapTwo():
     pygame.mixer.init()
-    pygame.mixer.music.load("song/game_one.mp3")
+    pygame.mixer.music.load("song/song_two.mp3")
     pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)
 
@@ -275,7 +294,7 @@ def mapTwo():
     while continuer:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                continuer = False
+                jouer()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     joueur.dy = -1
@@ -307,6 +326,8 @@ def mapTwo():
         for tir in joueur.tirs:
             tir.deplacer()
 
+        joueur.tourner(2)
+
         for ennemi in ennemis:
             ennemi.suivre_joueur(joueur)
             ennemi.gestion_collision_ennemis(ennemis)
@@ -315,6 +336,7 @@ def mapTwo():
 
         joueur.deplacer()
         gestion_collisions(joueur, ennemis)
+        joueur.image = joueur.obtenir_image_rotated()
 
         dessiner_entites(joueur, ennemis)
 
@@ -339,7 +361,7 @@ def mapTwo():
 
 def mapThree():
     pygame.mixer.init()
-    pygame.mixer.music.load("song/game_one.mp3")
+    pygame.mixer.music.load("song/game_three.mp3")
     pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)
 
@@ -354,6 +376,7 @@ def mapThree():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 continuer = False
+                jouer()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     joueur.dy = -1
@@ -384,6 +407,9 @@ def mapThree():
 
         for tir in joueur.tirs:
             tir.deplacer()
+
+        joueur.tourner(2)
+        
 
 
         for ennemi in ennemis:
