@@ -2,6 +2,7 @@ import pygame
 import random
 import math
 import sys
+from menu import menu
 
 # Initialisation de Pygame
 pygame.init()
@@ -44,7 +45,7 @@ class Tir:
 
 # Classe pour représenter le joueur
 class Joueur:
-    def __init__(self, vitesse_tir_joueur=10.0):
+    def __init__(self, vitesse_tir_joueur=10.0, delai_tir_joueur=450):
         self.x = random.randint(0, nombre_colonnes - 1)
         self.y = random.randint(0, nombre_lignes - 1)
         self.dx = 0
@@ -53,6 +54,8 @@ class Joueur:
         self.vie = 100
         self.tirs = []
         self.vitesse_tir_joueur = vitesse_tir_joueur
+        self.temps_dernier_tir = pygame.time.get_ticks()
+        self.delai_tir_joueur = delai_tir_joueur 
 
     def deplacer(self):
         self.x += self.dx * self.vitesse
@@ -72,6 +75,13 @@ class Ennemi:
         self.tirs = []
         self.temps_dernier_tir = pygame.time.get_ticks()
         self.vitesse_tir_ennemi = vitesse_tir_ennemi
+        self.vie = 100
+
+    def perdre_vie(self, points):
+        self.vie -= points
+        print("vie -> ", self.vie)
+        if self.vie <= 0:
+            self.vie = 0
 
     def suivre_joueur(self, joueur):
         dx = joueur.x - self.x
@@ -118,62 +128,47 @@ def dessiner_entites(joueur, ennemis):
 
     for ennemi in ennemis:
         pygame.draw.rect(fenetre, rouge, (ennemi.x * taille_case, ennemi.y * taille_case, taille_case, taille_case))
+        
+        # Dessiner le point de vie au-dessus de l'ennemi
+        texte_vie_ennemi = police.render(str(ennemi.vie), True, noir)
+        fenetre.blit(texte_vie_ennemi, (ennemi.x * taille_case, ennemi.y * taille_case - 20))
+
         for tir in ennemi.tirs:
             pygame.draw.circle(fenetre, rouge, (int(tir.x * taille_case), int(tir.y * taille_case)), 5)
 
 # Fonction pour gérer les collisions entre les tirs et le joueur
 def gestion_collisions(joueur, ennemis):
+    tirs_joueur_a_retirer = []
+    ennemis_a_retirer = []
+    tirs_ennemis_a_retirer = [] 
+
+    for tir in joueur.tirs:
+        for ennemi in ennemis:
+            tir_x = int(tir.x // taille_case)
+            tir_y = int(tir.y // taille_case)
+            
+            distance = math.sqrt((ennemi.x - tir_x)**2 + (ennemi.y - tir_y)**2)
+            if distance < 1:
+                print("Balle touche un ennemi!")
+                ennemi.perdre_vie(10)
+                tirs_joueur_a_retirer.append(tir)
+                if ennemi.vie == 0:
+                    print("Ennemi éliminé!")
+                    ennemis_a_retirer.append(ennemi)
+
     for ennemi in ennemis:
         for tir in ennemi.tirs:
             distance = math.sqrt((joueur.x - tir.x)**2 + (joueur.y - tir.y)**2)
             if distance < 1:
+                print("Balle ennemie touche le joueur!")
                 joueur.perdre_vie(5)
-                ennemi.tirs.remove(tir)
+                tirs_ennemis_a_retirer.append(tir)
 
-def menu():
-    fond = pygame.image.load("IMG_6141.jpg").convert()
-    font_menu = pygame.font.SysFont(None, 50)
-    titre = font_menu.render("Rogue-like en Python", True, noir)
-    play_button = pygame.Rect(300, 250, 200, 50)
-    quit_button = pygame.Rect(300, 350, 200, 50)
-    play_color = rouge
-    quit_color = rouge
-
-    while True:
-        fenetre.blit(fond, (0, 0))  # Affichez l'image de fond
-
-        fenetre.blit(titre, (200, 150))
-
-        pygame.draw.rect(fenetre, play_color, play_button)
-        pygame.draw.rect(fenetre, quit_color, quit_button)
-
-        texte_play = font_menu.render("PLAY", True, blanc)
-        texte_quit = font_menu.render("QUIT", True, blanc)
-        fenetre.blit(texte_play, (play_button.x + 50, play_button.y + 15))
-        fenetre.blit(texte_quit, (quit_button.x + 50, quit_button.y + 15))
-
-        pygame.display.flip()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if play_button.collidepoint(event.pos):
-                    return "play"
-                elif quit_button.collidepoint(event.pos):
-                    pygame.quit()
-                    sys.exit()
-            elif event.type == pygame.MOUSEMOTION:
-                if play_button.collidepoint(event.pos):
-                    play_color = (255, 0, 0)  # Rouge
-                else:
-                    play_color = (0, 255, 0)  # Vert
-
-                if quit_button.collidepoint(event.pos):
-                    quit_color = (255, 0, 0)  # Rouge
-                else:
-                    quit_color = (0, 255, 0)  # Vert
+    joueur.tirs = [tir for tir in joueur.tirs if tir not in tirs_joueur_a_retirer]
+    for ennemi in ennemis:
+        ennemi.tirs = [tir for tir in ennemi.tirs if tir not in tirs_ennemis_a_retirer]
+    for ennemi in ennemis_a_retirer:
+        ennemis.remove(ennemi)
 
 def mapOne():
     joueur = Joueur(vitesse_tir_joueur=10.0)  # Vous pouvez ajuster cette valeur selon vos besoins
@@ -206,9 +201,13 @@ def mapOne():
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Vérifiez si c'est un clic gauche
-                    angle = math.atan2(viseur.y - joueur.y * taille_case, viseur.x - joueur.x * taille_case)
-                    tir = Tir(joueur.x * taille_case, joueur.y * taille_case, angle, vitesse=joueur.vitesse_tir_joueur)
-                    joueur.tirs.append(tir)
+                    now = pygame.time.get_ticks()
+                    temps_ecoule = now - joueur.temps_dernier_tir
+                    if temps_ecoule > joueur.delai_tir_joueur:
+                        angle = math.atan2(viseur.y - joueur.y * taille_case, viseur.x - joueur.x * taille_case)
+                        tir = Tir(joueur.x * taille_case, joueur.y * taille_case, angle, vitesse=joueur.vitesse_tir_joueur)
+                        joueur.tirs.append(tir)
+                        joueur.temps_dernier_tir = now
 
         for tir in joueur.tirs:
             tir.deplacer()
@@ -223,7 +222,6 @@ def mapOne():
         gestion_collisions(joueur, ennemis)
         dessiner_entites(joueur, ennemis)
 
-        # Dessiner le viseur
         pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
 
         texte_vie = police.render(f"Vie : {joueur.vie}", True, noir)
@@ -238,7 +236,7 @@ def jouer():
 
     while True:
         if etat_jeu == "menu":
-            etat_jeu = menu()
+            etat_jeu = menu(fenetre)
         elif etat_jeu == "play":
             etat_jeu = mapOne()
             etat_jeu = "menu"
