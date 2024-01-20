@@ -98,6 +98,8 @@ class Ennemi:
         self.y = random.randint(0, nombre_lignes - 1)
         self.tirs = []
         self.temps_dernier_tir = pygame.time.get_ticks()
+        self.image = pygame.image.load("song/monster.png")
+        self.image = pygame.transform.scale(self.image, (taille_case, taille_case))
         self.vitesse_tir_ennemi = vitesse_tir_ennemi
         self.vie = life
 
@@ -151,14 +153,15 @@ def dessiner_entites(joueur, ennemis):
         pygame.draw.circle(fenetre, noir, (int(tir.x), int(tir.y)), 5)
 
     for ennemi in ennemis:
-        pygame.draw.rect(fenetre, rouge, (ennemi.x * taille_case, ennemi.y * taille_case, taille_case, taille_case))
-        
+        fenetre.blit(ennemi.image, (ennemi.x * taille_case, ennemi.y * taille_case))
+
         # Dessiner le point de vie au-dessus de l'ennemi
         texte_vie_ennemi = police.render(str(ennemi.vie), True, noir)
         fenetre.blit(texte_vie_ennemi, (ennemi.x * taille_case, ennemi.y * taille_case - 20))
 
         for tir in ennemi.tirs:
             pygame.draw.circle(fenetre, rouge, (int(tir.x * taille_case), int(tir.y * taille_case)), 5)
+
 
 # Fonction pour gérer les collisions entre les tirs et le joueur
 def gestion_collisions(joueur, ennemis):
