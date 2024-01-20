@@ -2,11 +2,18 @@ import pygame
 import sys
 
 def menu(fenetre):
+    pygame.mixer.init()  # Initialize the mixer
+    pygame.mixer.music.load("song/song_home.mp3")  # Replace with the path to your music file
+    pygame.mixer.music.set_volume(0.5)  # Set the volume (0.0 to 1.0)
+    pygame.mixer.music.play(-1)
+
     blanc = (255, 255, 255)
     noir = (0, 0, 0)
     rouge = (255, 0, 0)
 
     fond = pygame.image.load("IMG_6141.jpg").convert()
+    fond = pygame.transform.scale(fond, (fenetre.get_width(), fenetre.get_height())).convert()
+
     font_menu = pygame.font.SysFont(None, 50)
     titre = font_menu.render("Rogue-like en Python", True, noir)
     play_button = pygame.Rect(300, 250, 200, 50)
@@ -16,7 +23,7 @@ def menu(fenetre):
 
     while True:
         fenetre.blit(fond, (0, 0))
-        fenetre.blit(titre, (200, 150))
+        # fenetre.blit(titre, (200, 150))
 
         pygame.draw.rect(fenetre, play_color, play_button)
         pygame.draw.rect(fenetre, quit_color, quit_button)
@@ -34,8 +41,10 @@ def menu(fenetre):
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if play_button.collidepoint(event.pos):
+                    pygame.mixer.music.stop()  # Stop the music before returning
                     return "play"
                 elif quit_button.collidepoint(event.pos):
+                    pygame.mixer.music.stop()  # Stop the music before quitting
                     pygame.quit()
                     sys.exit()
             elif event.type == pygame.MOUSEMOTION:

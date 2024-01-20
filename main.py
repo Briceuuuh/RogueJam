@@ -1,7 +1,6 @@
 import pygame
 import random
 import math
-import sys
 from menu import menu
 
 # Initialisation de Pygame
@@ -13,6 +12,13 @@ hauteur_fenetre = 600
 taille_case = 50
 nombre_colonnes = largeur_fenetre // taille_case
 nombre_lignes = hauteur_fenetre // taille_case
+
+shoot_sound = pygame.mixer.Sound("song/tir.mp3")  # Replace with the path to your shoot sound file
+enemy_died = pygame.mixer.Sound("song/dead.mp3")
+player_degat = pygame.mixer.Sound("song/degat.mp3")
+player_dead = pygame.mixer.Sound("song/jesuismort.mp3")
+new_level = pygame.mixer.Sound("song/level.mp3")
+win = pygame.mixer.Sound("song/win.mp3")
 
 # Couleurs
 blanc = (255, 255, 255)
@@ -30,6 +36,9 @@ class Viseur:
     def __init__(self):
         self.x = 0
         self.y = 0
+        self.image = pygame.image.load("original.png")  # Remplacez "path/to/your/crosshair.png" par le chemin de votre image
+        self.image = pygame.transform.scale(self.image, (50, 50))  # Ajustez la taille de l'image selon vos besoins
+        self.rect = self.image.get_rect()
 
 # Classe pour représenter un tir
 class Tir:
@@ -45,7 +54,7 @@ class Tir:
 
 # Classe pour représenter le joueur
 class Joueur:
-    def __init__(self, vitesse_tir_joueur=10.0, delai_tir_joueur=450):
+    def __init__(self, vitesse_tir_joueur=100.0, delai_tir_joueur=0):
         self.x = random.randint(0, nombre_colonnes - 1)
         self.y = random.randint(0, nombre_lignes - 1)
         self.dx = 0
@@ -69,13 +78,13 @@ class Joueur:
 
 # Classe pour représenter un ennemi
 class Ennemi:
-    def __init__(self, vitesse_tir_ennemi=2.0):
+    def __init__(self, vitesse_tir_ennemi=2.0, life=100):
         self.x = random.randint(0, nombre_colonnes - 1)
         self.y = random.randint(0, nombre_lignes - 1)
         self.tirs = []
         self.temps_dernier_tir = pygame.time.get_ticks()
         self.vitesse_tir_ennemi = vitesse_tir_ennemi
-        self.vie = 100
+        self.vie = life
 
     def perdre_vie(self, points):
         self.vie -= points
@@ -102,10 +111,10 @@ class Ennemi:
                     self.x += math.cos(angle) * (1 - distance)
                     self.y += math.sin(angle) * (1 - distance)
 
-    def tirer(self, joueur):
+    def tirer(self, joueur, tir_ennemi=1000):
         now = pygame.time.get_ticks()
         temps_ecoule = now - self.temps_dernier_tir
-        delai_tir = 1000
+        delai_tir = tir_ennemi ## tir ennemie
 
         if temps_ecoule > delai_tir:
             angle = math.atan2(joueur.y - self.y, joueur.x - self.x)
@@ -155,6 +164,7 @@ def gestion_collisions(joueur, ennemis):
                 if ennemi.vie == 0:
                     print("Ennemi éliminé!")
                     ennemis_a_retirer.append(ennemi)
+                    enemy_died.play()
 
     for ennemi in ennemis:
         for tir in ennemi.tirs:
@@ -163,6 +173,7 @@ def gestion_collisions(joueur, ennemis):
                 print("Balle ennemie touche le joueur!")
                 joueur.perdre_vie(5)
                 tirs_ennemis_a_retirer.append(tir)
+                player_degat.play()
 
     joueur.tirs = [tir for tir in joueur.tirs if tir not in tirs_joueur_a_retirer]
     for ennemi in ennemis:
@@ -171,9 +182,92 @@ def gestion_collisions(joueur, ennemis):
         ennemis.remove(ennemi)
 
 def mapOne():
-    joueur = Joueur(vitesse_tir_joueur=10.0)  # Vous pouvez ajuster cette valeur selon vos besoins
+    pygame.mixer.init()
+    pygame.mixer.music.load("song/game_one.mp3")
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
+
+    joueur = Joueur(vitesse_tir_joueur=10.0)
     nombre_ennemis = 5
-    ennemis = [Ennemi(vitesse_tir_ennemi=0.1) for _ in range(nombre_ennemis)]  # Vous pouvez ajuster cette valeur selon vos besoins
+    ennemis = [Ennemi(vitesse_tir_ennemi=0.1, life=100) for _ in range(nombre_ennemis)]
+    viseur = Viseur()  
+    continuer = True
+    clock = pygame.time.Clock()
+
+    while continuer:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.mixer.music.stop()  # Stop the music before quitting
+                pygame.quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    joueur.dy = -1
+                elif event.key == pygame.K_DOWN:
+                    joueur.dy = 1
+                elif event.key == pygame.K_LEFT:
+                    joueur.dx = -1
+                elif event.key == pygame.K_RIGHT:
+                    joueur.dx = 1
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                    joueur.dy = 0
+                elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    joueur.dx = 0
+            elif event.type == pygame.MOUSEMOTION:
+                viseur.x, viseur.y = event.pos  # Mettre à jour la position du viseur
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Vérifiez si c'est un clic gauche
+                    now = pygame.time.get_ticks()
+                    temps_ecoule = now - joueur.temps_dernier_tir
+                    if temps_ecoule > joueur.delai_tir_joueur:
+                        angle = math.atan2(viseur.y - joueur.y * taille_case, viseur.x - joueur.x * taille_case)
+                        tir = Tir(joueur.x * taille_case, joueur.y * taille_case, angle, vitesse=joueur.vitesse_tir_joueur)
+                        joueur.tirs.append(tir)
+                        joueur.temps_dernier_tir = now
+                        shoot_sound.play()
+
+        for tir in joueur.tirs:
+            tir.deplacer()
+
+        for ennemi in ennemis:
+            ennemi.suivre_joueur(joueur)
+            ennemi.gestion_collision_ennemis(ennemis)
+            ennemi.tirer(joueur)
+            ennemi.deplacer_tirs()
+
+        if (len(ennemis) == 0):
+            new_level.play()
+            mapTwo()
+
+        joueur.deplacer()
+        gestion_collisions(joueur, ennemis)
+
+        dessiner_entites(joueur, ennemis)
+
+        fenetre.blit(viseur.image, (viseur.x - viseur.rect.width // 2, viseur.y - viseur.rect.height // 2))
+
+        pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
+
+        if (joueur.vie <= 0):
+            player_dead.play()
+            continuer = False
+
+        texte_vie = police.render(f"Vie : {joueur.vie}", True, noir)
+        fenetre.blit(texte_vie, (10, 10))
+
+        pygame.display.flip()
+        clock.tick(60)
+
+def mapTwo():
+    pygame.mixer.init()
+    pygame.mixer.music.load("song/game_one.mp3")
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
+
+    joueur = Joueur(vitesse_tir_joueur=10.0)
+    nombre_ennemis = 10
+    ennemis = [Ennemi(vitesse_tir_ennemi=0.1, life=100) for _ in range(nombre_ennemis)]
     viseur = Viseur()  
     continuer = True
     clock = pygame.time.Clock()
@@ -208,6 +302,7 @@ def mapOne():
                         tir = Tir(joueur.x * taille_case, joueur.y * taille_case, angle, vitesse=joueur.vitesse_tir_joueur)
                         joueur.tirs.append(tir)
                         joueur.temps_dernier_tir = now
+                        shoot_sound.play()
 
         for tir in joueur.tirs:
             tir.deplacer()
@@ -220,9 +315,100 @@ def mapOne():
 
         joueur.deplacer()
         gestion_collisions(joueur, ennemis)
+
         dessiner_entites(joueur, ennemis)
 
         pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
+
+        if (len(ennemis) == 0):
+            new_level.play()
+            mapThree()
+
+        fenetre.blit(viseur.image, (viseur.x - viseur.rect.width // 2, viseur.y - viseur.rect.height // 2))
+
+        if (joueur.vie <= 0):
+            player_dead.play()
+            jouer()
+
+        texte_vie = police.render(f"Vie : {joueur.vie}", True, noir)
+        fenetre.blit(texte_vie, (10, 10))
+
+        pygame.display.flip()
+        clock.tick(60)
+
+
+def mapThree():
+    pygame.mixer.init()
+    pygame.mixer.music.load("song/game_one.mp3")
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
+
+    joueur = Joueur(vitesse_tir_joueur=10.0)
+    nombre_ennemis = 2
+    ennemis = [Ennemi(vitesse_tir_ennemi=0.1, life=10) for _ in range(nombre_ennemis)]
+    viseur = Viseur()  
+    continuer = True
+    clock = pygame.time.Clock()
+
+    while continuer:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                continuer = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    joueur.dy = -1
+                elif event.key == pygame.K_DOWN:
+                    joueur.dy = 1
+                elif event.key == pygame.K_LEFT:
+                    joueur.dx = -1
+                elif event.key == pygame.K_RIGHT:
+                    joueur.dx = 1
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                    joueur.dy = 0
+                elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    joueur.dx = 0
+            elif event.type == pygame.MOUSEMOTION:
+                viseur.x, viseur.y = event.pos  # Mettre à jour la position du viseur
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Vérifiez si c'est un clic gauche
+                    now = pygame.time.get_ticks()
+                    temps_ecoule = now - joueur.temps_dernier_tir
+                    if temps_ecoule > joueur.delai_tir_joueur:
+                        angle = math.atan2(viseur.y - joueur.y * taille_case, viseur.x - joueur.x * taille_case)
+                        tir = Tir(joueur.x * taille_case, joueur.y * taille_case, angle, vitesse=joueur.vitesse_tir_joueur)
+                        joueur.tirs.append(tir)
+                        joueur.temps_dernier_tir = now
+                        shoot_sound.play()
+
+        for tir in joueur.tirs:
+            tir.deplacer()
+
+
+        for ennemi in ennemis:
+            ennemi.suivre_joueur(joueur)
+            ennemi.gestion_collision_ennemis(ennemis)
+            ennemi.tirer(joueur, 100)
+            ennemi.deplacer_tirs()
+
+        if (len(ennemis) == 0):
+            win.play() 
+            jouer()
+
+        joueur.deplacer()
+        gestion_collisions(joueur, ennemis)
+
+        dessiner_entites(joueur, ennemis)
+
+        pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
+
+        fenetre.blit(viseur.image, (viseur.x - viseur.rect.width // 2, viseur.y - viseur.rect.height // 2))
+
+
+        if (joueur.vie <= 0):
+            player_dead.play()
+            jouer()
 
         texte_vie = police.render(f"Vie : {joueur.vie}", True, noir)
         fenetre.blit(texte_vie, (10, 10))
