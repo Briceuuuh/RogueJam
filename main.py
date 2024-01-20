@@ -118,51 +118,88 @@ def gestion_collisions(joueur, ennemis):
                 joueur.perdre_vie(5)
                 ennemi.tirs.remove(tir)
 
-# Fonction principale du jeu
-def jouer():
-    joueur = Joueur()
-    nombre_ennemis = 5
-    ennemis = [Ennemi() for _ in range(nombre_ennemis)]
+# Fonction pour la page de menu
+def menu():
+    font_menu = pygame.font.SysFont(None, 50)
+    titre = font_menu.render("Rogue-like en Python", True, noir)
+    play_button = pygame.Rect(300, 250, 200, 50)
+    quit_button = pygame.Rect(300, 350, 200, 50)
 
-    continuer = True
-    clock = pygame.time.Clock()
+    while True:
+        fenetre.fill(blanc)
+        fenetre.blit(titre, (200, 150))
 
-    while continuer:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                continuer = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    joueur.dy = -1
-                elif event.key == pygame.K_DOWN:
-                    joueur.dy = 1
-                elif event.key == pygame.K_LEFT:
-                    joueur.dx = -1
-                elif event.key == pygame.K_RIGHT:
-                    joueur.dx = 1
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                    joueur.dy = 0
-                elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                    joueur.dx = 0
+        pygame.draw.rect(fenetre, rouge, play_button)
+        pygame.draw.rect(fenetre, rouge, quit_button)
 
-        for ennemi in ennemis:
-            ennemi.suivre_joueur(joueur)
-            ennemi.gestion_collision_ennemis(ennemis)
-            ennemi.tirer(joueur)
-            ennemi.deplacer_tirs()
-
-        joueur.deplacer()
-        gestion_collisions(joueur, ennemis)
-        dessiner_entites(joueur, ennemis)
-
-        texte_vie = police.render(f"Vie : {joueur.vie}", True, noir)
-        fenetre.blit(texte_vie, (10, 10))
+        texte_play = font_menu.render("PLAY", True, blanc)
+        texte_quit = font_menu.render("QUIT", True, blanc)
+        fenetre.blit(texte_play, (play_button.x + 50, play_button.y + 15))
+        fenetre.blit(texte_quit, (quit_button.x + 50, quit_button.y + 15))
 
         pygame.display.flip()
-        clock.tick(60)
 
-    pygame.quit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if play_button.collidepoint(event.pos):
+                    return "play"
+                elif quit_button.collidepoint(event.pos):
+                    pygame.quit()
+                    quit()
+
+# Fonction principale du jeu
+def jouer():
+    etat_jeu = "menu"
+
+    while True:
+        if etat_jeu == "menu":
+            etat_jeu = menu()
+        elif etat_jeu == "play":
+            joueur = Joueur()
+            nombre_ennemis = 5
+            ennemis = [Ennemi() for _ in range(nombre_ennemis)]
+            continuer = True
+            clock = pygame.time.Clock()
+
+            while continuer:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        continuer = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_UP:
+                            joueur.dy = -1
+                        elif event.key == pygame.K_DOWN:
+                            joueur.dy = 1
+                        elif event.key == pygame.K_LEFT:
+                            joueur.dx = -1
+                        elif event.key == pygame.K_RIGHT:
+                            joueur.dx = 1
+                    elif event.type == pygame.KEYUP:
+                        if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                            joueur.dy = 0
+                        elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                            joueur.dx = 0
+
+                for ennemi in ennemis:
+                    ennemi.suivre_joueur(joueur)
+                    ennemi.gestion_collision_ennemis(ennemis)
+                    ennemi.tirer(joueur)
+                    ennemi.deplacer_tirs()
+
+                joueur.deplacer()
+                gestion_collisions(joueur, ennemis)
+                dessiner_entites(joueur, ennemis)
+
+                texte_vie = police.render(f"Vie : {joueur.vie}", True, noir)
+                fenetre.blit(texte_vie, (10, 10))
+
+                pygame.display.flip()
+                clock.tick(60)
+
+            etat_jeu = "menu"  # Retour au menu après la fin du jeu
 
 # Appel de la fonction principale
 jouer()
