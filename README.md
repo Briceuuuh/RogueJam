@@ -1,48 +1,89 @@
-# Présentation
+# 🛸 (GT)R TYPE
+![MENU](docs/menu.png)
 
-👋 Bonjour ! Je suis Brice HUET, un passionné de développement mobile actuellement en troisième année à Epitech, une école d'informatique. Je me spécialise dans la création d'applications mobiles.
+## 🌍 Prologue
 
-## À propos de moi
+In galaxy X1X, in 2163.
 
-🎓 J'ai acquis une solide base de connaissances grâce à ma scolarité à Epitech, ainsi que mes expériences de stage dans le domaine du développement mobile. Mon désir d'apprendre m'a également poussé à entreprendre des formations autodidactes.
+The new space government seeks to destroy enemy planets. It's a tough fight, but luckily you're here to help, Captain.
 
-## Compétences clés
+## 🔑 prerequisites
 
-- ⚛️ Expertise dans le développement front-end avec React Native.
-- 📱 Conception et création d'interfaces utilisateur attrayantes et réactives.
-- 🚀 Optimisation des performances pour des expériences mobiles fluides.
-- 🔧 Résolution efficace de problèmes et débogage.
+if you have a *Windows machine*, you'll need to install Visual Studio, CMake and CPack.
 
-## Compétences techniques
+*More about Visual Studio => https://visualstudio.microsoft.com/*
 
-Voici un aperçu de mes compétences techniques :
+*More about CMake => https://cmake.org/download/*
 
-### Langages de Programmation
+*More about NSIS (Cpack) => https://nsis.sourceforge.io/Download*
 
-- JavaScript / TypeScript
-- Python
-- C / C++
-- Haskell
+## 💻 Usage
 
-### Technologies
+* __Linux__ ~
+Simply run the bash script *build.sh*:
+```bash
+./build.sh
+```
 
-- **Développement Mobile :** React Native
-- **Environnement Backend :** Node.js
-- **Base de données :** MongoDB
-- **Langages Web :** HTML, CSS, JavaScript
+* __Windows__ ~ (on powershell):
+```powershell
+.\build.bat
+```
 
-Je suis à l'aise avec ces langages et technologies, et je suis toujours enthousiaste à l'idée d'apprendre de nouvelles compétences pour répondre aux besoins changeants du développement mobile et informatique.
+This will generate 2 binaries:
 
-## Expérience en Freelance
+On linux:
+* `./rtype_server` 
+* `./rtype_client`
 
-💼 En tant que développeur en freelance, je mets mes compétences à votre disposition pour le développement d'applications mobiles exceptionnelles. Que vous ayez besoin de créer une nouvelle application depuis zéro ou d'améliorer une application existante, je suis prêt à relever le défi.
+On Windows:
+* `.\rtype_server.exe` 
+* `.\rtype_client.exe`
 
-🔍 De plus, je suis en mesure de fournir des conseils avisés et de proposer des solutions. Mon approche consiste à comprendre vos objectifs, à analyser les défis auxquels vous êtes confrontés et à concevoir des solutions sur mesure. Que ce soit pour optimiser l'expérience utilisateur, intégrer des fonctionnalités avancées ou résoudre des problèmes techniques complexes, je suis là pour vous aider à réaliser votre vision.
+### Server
 
-Contactez-moi pour discuter de vos projets et explorons comment je peux répondre à vos besoins.
+```bash
+./rtype_server [PORT]
+```
 
-## Contact
+the arguments is:
+* __[ PORT ]__ for the port to be connected to
 
-📬 N'hésitez pas à me contacter si vous avez des questions, des opportunités de collaboration ou simplement pour discuter de vos idées de projet. Vous pouvez me joindre par email à [briceuh29@gmail.com] ou via [LinkedIn](https://www.linkedin.com/in/bricehuet).
+### Client
 
-Je suis impatient de travailler ensemble pour donner vie à vos idées mobiles !
+```bash
+./rtype_client [PORT] [HOST]
+```
+
+the arguments are:
+* __[ PORT ]__ for the port to be connected to
+* __[ HOST ]__ for the machine's domain name
+
+## 📝 Architecture
+
+Our project is composed by 3 parts:
+* Game Engine
+* Client
+* Server
+
+### Game Engine
+![Diagram](docs/RType-Engine.png)
+
+* For the Game Engine, we decided to develop a *ECS (Entity Component System)* like. Hope you'll like it !
+* Read the get started for an easy start (
+[READ THE DOC](Engine/README.md))
+
+
+### Server
+
+![Server](docs/RType-Server.png)
+
+* Here's a documentation if you need to learn more about our binary protocol : [READ THE DOC](Server/docs/README.md)
+
+## 👥 Autors
+
+* Maël POMPILIUS
+* Florian ETHEVE
+* Ethan GUILLOUX
+* Brice HUET
+* Noémie MAILLOT

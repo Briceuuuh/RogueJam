@@ -1,0 +1,10 @@
+# 📋 GTR-TYPE PROTOCOL DOCUMENTATION
+![PAGE](GTR-TYPE_server_protocol_doc-1.png)
+![PAGE2](GTR-TYPE_server_protocol_doc-2.png)
+![PAGE3](GTR-TYPE_server_protocol_doc-3.png)
+![PAGE4](GTR-TYPE_server_protocol_doc-4.png)
+![PAGE5](GTR-TYPE_server_protocol_doc-5.png)
+![PAGE6](GTR-TYPE_server_protocol_doc-6.png)
+![PAGE7](GTR-TYPE_server_protocol_doc-7.png)
+![PAGE8](GTR-TYPE_server_protocol_doc-8.png)
+![PAGE9](GTR-TYPE_server_protocol_doc-9.png)
