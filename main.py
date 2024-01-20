@@ -2,13 +2,14 @@ import pygame
 import random
 import math
 from menu import menu
+import pytmx
 
 # Initialisation de Pygame
 pygame.init()
 
 # Paramètres du jeu
-largeur_fenetre = 800
-hauteur_fenetre = 600
+largeur_fenetre = 960
+hauteur_fenetre = 640
 taille_case = 50
 nombre_colonnes = largeur_fenetre // taille_case
 nombre_lignes = hauteur_fenetre // taille_case
@@ -144,8 +145,15 @@ class Ennemi:
             tir.deplacer()
 
 # Fonction pour dessiner les entités (joueur, ennemis, tirs)
-def dessiner_entites(joueur, ennemis):
+def dessiner_entites(joueur, ennemis, tmx_data):
     fenetre.fill(blanc)
+
+    for layer in tmx_data.layers:
+        if isinstance(layer, pytmx.TiledTileLayer):
+            for x, y, gid in layer:
+                tile_image = tmx_data.get_tile_image_by_gid(gid)
+                if tile_image:
+                    fenetre.blit(tile_image, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
 
     fenetre.blit(joueur.image, (joueur.x * taille_case, joueur.y * taille_case))
 
@@ -212,6 +220,8 @@ def mapOne():
     continuer = True
     clock = pygame.time.Clock()
 
+    tmx_data = pytmx.util_pygame.load_pygame("./mapOne/idk.tmx")
+
     while continuer:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -265,7 +275,14 @@ def mapOne():
 
         joueur.image = joueur.obtenir_image_rotated()
 
-        dessiner_entites(joueur, ennemis)
+        for layer in tmx_data.layers:
+            if isinstance(layer, pytmx.TiledTileLayer):
+                for x, y, gid in layer:
+                    tile_image = tmx_data.get_tile_image_by_gid(gid)
+                    if tile_image:
+                        fenetre.blit(tile_image, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
+
+        dessiner_entites(joueur, ennemis, tmx_data)
 
         fenetre.blit(viseur.image, (viseur.x - viseur.rect.width // 2, viseur.y - viseur.rect.height // 2))
 
@@ -293,6 +310,8 @@ def mapTwo():
     viseur = Viseur()  
     continuer = True
     clock = pygame.time.Clock()
+
+    tmx_data = pytmx.util_pygame.load_pygame("./mapTwo/present.tmx")
 
     while continuer:
         for event in pygame.event.get():
@@ -341,7 +360,14 @@ def mapTwo():
         gestion_collisions(joueur, ennemis)
         joueur.image = joueur.obtenir_image_rotated()
 
-        dessiner_entites(joueur, ennemis)
+        for layer in tmx_data.layers:
+            if isinstance(layer, pytmx.TiledTileLayer):
+                for x, y, gid in layer:
+                    tile_image = tmx_data.get_tile_image_by_gid(gid)
+                    if tile_image:
+                        fenetre.blit(tile_image, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
+
+        dessiner_entites(joueur, ennemis, tmx_data)
 
         pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
 
@@ -374,6 +400,8 @@ def mapThree():
     viseur = Viseur()  
     continuer = True
     clock = pygame.time.Clock()
+
+    tmx_data = pytmx.util_pygame.load_pygame("./mapThree/untitled.tmx")
 
     while continuer:
         for event in pygame.event.get():
@@ -428,7 +456,14 @@ def mapThree():
         joueur.deplacer()
         gestion_collisions(joueur, ennemis)
 
-        dessiner_entites(joueur, ennemis)
+        for layer in tmx_data.layers:
+            if isinstance(layer, pytmx.TiledTileLayer):
+                for x, y, gid in layer:
+                    tile_image = tmx_data.get_tile_image_by_gid(gid)
+                    if tile_image:
+                        fenetre.blit(tile_image, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
+
+        dessiner_entites(joueur, ennemis, tmx_data)
 
         pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
 
