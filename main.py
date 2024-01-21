@@ -108,14 +108,34 @@ class Joueur:
 # Classe pour représenter un ennemi
 class Ennemi:
     def __init__(self, vitesse_tir_ennemi=2.0, life=100):
-        self.x = random.randint(0, nombre_colonnes - 1)
-        self.y = random.randint(0, nombre_lignes - 1)
+        # self.x = random.randint(0, nombre_colonnes - 1)
+        # self.y = random.randint(0, nombre_lignes - 1)
+        self.x, self.y = self.random_position()
         self.tirs = []
         self.temps_dernier_tir = pygame.time.get_ticks()
         self.image = pygame.image.load("song/monster.png")
         self.image = pygame.transform.scale(self.image, (taille_case, taille_case))
         self.vitesse_tir_ennemi = vitesse_tir_ennemi
         self.vie = life
+    
+    def random_position(self):
+        # Determine a random side of the map for enemy spawn
+        side = random.choice(['left', 'right', 'top', 'bottom'])
+        
+        if side == 'left':
+            x = -1
+            y = random.randint(0, nombre_lignes - 1)
+        elif side == 'right':
+            x = nombre_colonnes
+            y = random.randint(0, nombre_lignes - 1)
+        elif side == 'top':
+            x = random.randint(0, nombre_colonnes - 1)
+            y = -1
+        elif side == 'bottom':
+            x = random.randint(0, nombre_colonnes - 1)
+            y = nombre_lignes
+
+        return x, y
 
     def perdre_vie(self, points):
         self.vie -= points
@@ -142,17 +162,6 @@ class Ennemi:
                     self.x += math.cos(angle) * (1 - distance)
                     self.y += math.sin(angle) * (1 - distance)
 
-    # def tirer(self, joueur, tir_ennemi=1000):
-    #     now = pygame.time.get_ticks()
-    #     temps_ecoule = now - self.temps_dernier_tir
-    #     delai_tir = tir_ennemi ## tir ennemie
-
-    #     if temps_ecoule > delai_tir:
-    #         angle = math.atan2(joueur.y - self.y, joueur.x - self.x)
-    #         tir = Tir(self.x, self.y, angle, vitesse=self.vitesse_tir_ennemi)
-    #         self.tirs.append(tir)
-    #         self.temps_dernier_tir = now
-                    
     def tirer(self, joueur, tir_ennemi=1000):
         now = pygame.time.get_ticks()
         temps_ecoule = now - self.temps_dernier_tir
@@ -198,14 +207,14 @@ def dessiner_entites(joueur, ennemis, tmx_data):
         fenetre.blit(ennemi.image, (ennemi.x * taille_case, ennemi.y * taille_case))
 
         # Dessiner le point de vie au-dessus de l'ennemi
-        texte_vie_ennemi = police.render(str(ennemi.vie), True, noir)
+        texte_vie_ennemi = police.render(str(ennemi.vie), True, rouge)
         fenetre.blit(texte_vie_ennemi, (ennemi.x * taille_case, ennemi.y * taille_case - 20))
 
         for tir in ennemi.tirs:
             pygame.draw.circle(fenetre, rouge, (int(tir.x * taille_case), int(tir.y * taille_case)), 5)
 
 # Fonction pour gérer les collisions entre les tirs et le joueur
-def gestion_collisions(joueur, ennemis):
+def gestion_collisions(joueur, ennemis, degat_monster=5, degat_player=10):
     tirs_joueur_a_retirer = []
     ennemis_a_retirer = []
     tirs_ennemis_a_retirer = [] 
@@ -218,7 +227,7 @@ def gestion_collisions(joueur, ennemis):
             distance = math.sqrt((ennemi.x - tir_x)**2 + (ennemi.y - tir_y)**2)
             if distance < 1:
                 print("Balle touche un ennemi!")
-                ennemi.perdre_vie(10)
+                ennemi.perdre_vie(degat_player)
                 tirs_joueur_a_retirer.append(tir)
                 if ennemi.vie == 0:
                     print("Ennemi éliminé!")
@@ -230,7 +239,7 @@ def gestion_collisions(joueur, ennemis):
             distance = math.sqrt((joueur.x - tir.x)**2 + (joueur.y - tir.y)**2)
             if distance < 1:
                 print("Balle ennemie touche le joueur!")
-                joueur.perdre_vie(5)
+                joueur.perdre_vie(degat_monster)
                 tirs_ennemis_a_retirer.append(tir)
                 player_degat.play()
 
@@ -432,13 +441,18 @@ def mapThree():
 
     joueur = Joueur(vitesse_tir_joueur=10.0)
     carre = Carre('song/bazooka.png')
-    nombre_ennemis = 2
-    ennemis = [Ennemi(vitesse_tir_ennemi=0.1, life=10) for _ in range(nombre_ennemis)]
     viseur = Viseur()  
     continuer = True
     clock = pygame.time.Clock()
 
     tmx_data = pytmx.util_pygame.load_pygame("./mapThree/untitled.tmx")
+
+    initial_timer = 120000
+    current_timer = initial_timer
+
+    enemies_spawned = 0
+    max_enemies = 2
+    ennemis = []
 
     while continuer:
         for event in pygame.event.get():
@@ -473,28 +487,34 @@ def mapThree():
                         joueur.temps_dernier_tir = now
                         shoot_sound.play()
 
+        elapsed_time = pygame.time.get_ticks()
+        remaining_time = max(0, initial_timer - elapsed_time)
+        minutes = remaining_time // 60000
+        seconds = (remaining_time // 1000) % 60
+
         for tir in joueur.tirs:
             tir.deplacer()
 
         joueur.tourner(2)
-        
-
 
         for ennemi in ennemis:
             ennemi.suivre_joueur(joueur)
             ennemi.gestion_collision_ennemis(ennemis)
-            ennemi.tirer(joueur, 100)
+            ennemi.tirer(joueur, 500)
             ennemi.deplacer_tirs()
 
-        if (len(ennemis) == 0):
-            win.play() 
-            jouer()
+        if len(ennemis) == 0:
+            enemies_spawned += 1
+            if enemies_spawned > max_enemies:
+                max_enemies += 1
+                enemies_spawned = 0
+                for _ in range(max_enemies):
+                    ennemis.append(Ennemi(vitesse_tir_ennemi=0.01, life=750))
 
-        check_collision_carre(joueur, carre)
+        check_collision_carre(joueur, carre, 750)
 
         joueur.deplacer()
-        gestion_collisions(joueur, ennemis)
-
+        gestion_collisions(joueur, ennemis, 5, check_val(carre.active))
 
         for layer in tmx_data.layers:
             if isinstance(layer, pytmx.TiledTileLayer):
@@ -511,18 +531,29 @@ def mapThree():
 
         fenetre.blit(viseur.image, (viseur.x - viseur.rect.width // 2, viseur.y - viseur.rect.height // 2))
 
-
-        if (joueur.vie <= 0):
+        if joueur.vie <= 0:
             player_dead.play()
             jouer()
 
-        texte_vie = police.render(f"Vie : {joueur.vie}", True, noir)
+        # Display the timer on the screen
+        texte_vie = police.render(f"Vie : {joueur.vie}", True, (255,255,255))
         fenetre.blit(texte_vie, (10, 10))
+        timer_text = police.render(f"{minutes:02d}:{seconds:02d}", True, rouge)
+        fenetre.blit(timer_text, (largeur_fenetre - 200, 10))
+
+        # Check if the timer has reached zero
+        if remaining_time <= 0:
+            win.play()
+            jouer()
 
         pygame.display.flip()
         clock.tick(60)
 
-# Fonction principale du jeu
+def check_val(val):
+    if val == True:
+        return 10
+    return 250
+
 def jouer():
     etat_jeu = "menu"
 
@@ -530,8 +561,8 @@ def jouer():
         if etat_jeu == "menu":
             etat_jeu = menu(fenetre)
         elif etat_jeu == "play":
+            # etat_jeu = mapThree()
             etat_jeu = mapOne()
             etat_jeu = "menu"
 
-# Appel de la fonction principale
 jouer()
