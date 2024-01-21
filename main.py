@@ -41,6 +41,19 @@ class Viseur:
         self.image = pygame.transform.scale(self.image, (50, 50))  # Ajustez la taille de l'image selon vos besoins
         self.rect = self.image.get_rect()
 
+class Carre:
+    def __init__(self, image="song/kalash.png"):
+        self.x = random.randint(0, nombre_colonnes - 1)
+        self.y = random.randint(0, nombre_lignes - 1)
+        self.size = taille_case
+        self.active = True
+        self.image = pygame.image.load(image)
+        self.image = pygame.transform.scale(self.image, (self.size, self.size))
+
+    def draw(self, surface):
+        if self.active:
+            surface.blit(self.image, (self.x * taille_case, self.y * taille_case))
+
 # Classe pour représenter un tir
 class Tir:
     def __init__(self, x, y, direction, vitesse=10.0):
@@ -55,7 +68,7 @@ class Tir:
 
 # Classe pour représenter le joueur
 class Joueur:
-    def __init__(self, vitesse_tir_joueur=100.0, delai_tir_joueur=0):
+    def __init__(self, vitesse_tir_joueur=100.0, delai_tir_joueur=1000):
         self.image_original = pygame.image.load("player.png")
         self.image_original = pygame.transform.scale(self.image_original, (taille_case, taille_case))
         self.image = self.image_original.copy() 
@@ -129,22 +142,43 @@ class Ennemi:
                     self.x += math.cos(angle) * (1 - distance)
                     self.y += math.sin(angle) * (1 - distance)
 
+    # def tirer(self, joueur, tir_ennemi=1000):
+    #     now = pygame.time.get_ticks()
+    #     temps_ecoule = now - self.temps_dernier_tir
+    #     delai_tir = tir_ennemi ## tir ennemie
+
+    #     if temps_ecoule > delai_tir:
+    #         angle = math.atan2(joueur.y - self.y, joueur.x - self.x)
+    #         tir = Tir(self.x, self.y, angle, vitesse=self.vitesse_tir_ennemi)
+    #         self.tirs.append(tir)
+    #         self.temps_dernier_tir = now
+                    
     def tirer(self, joueur, tir_ennemi=1000):
         now = pygame.time.get_ticks()
         temps_ecoule = now - self.temps_dernier_tir
-        delai_tir = tir_ennemi ## tir ennemie
+        delai_tir = tir_ennemi  # tir ennemie
 
         if temps_ecoule > delai_tir:
-            angle = math.atan2(joueur.y - self.y, joueur.x - self.x)
-            tir = Tir(self.x, self.y, angle, vitesse=self.vitesse_tir_ennemi)
-            self.tirs.append(tir)
+            angles = [0, math.pi / 2, math.pi, 3 * math.pi / 2]  # Haut, Gauche, Bas, Droite
+            for angle in angles:
+                tir = Tir(self.x, self.y, angle, vitesse=self.vitesse_tir_ennemi)
+                self.tirs.append(tir)
+            
             self.temps_dernier_tir = now
 
     def deplacer_tirs(self):
         for tir in self.tirs:
             tir.deplacer()
 
-# Fonction pour dessiner les entités (joueur, ennemis, tirs)
+def check_collision_carre(joueur, carre, delai_tir=0):
+    joueur_rect = pygame.Rect(joueur.x * taille_case, joueur.y * taille_case, taille_case, taille_case)
+    carre_rect = pygame.Rect(carre.x * taille_case, carre.y * taille_case, carre.size, carre.size)
+
+    if joueur_rect.colliderect(carre_rect) and carre.active:
+        joueur.delai_tir_joueur = delai_tir # Increase the player's shooting delay
+        carre.active = False
+
+# Fonction pour dessiner les entités (joueur, ennemis, tirs, carrés)
 def dessiner_entites(joueur, ennemis, tmx_data):
     fenetre.fill(blanc)
 
@@ -169,7 +203,6 @@ def dessiner_entites(joueur, ennemis, tmx_data):
 
         for tir in ennemi.tirs:
             pygame.draw.circle(fenetre, rouge, (int(tir.x * taille_case), int(tir.y * taille_case)), 5)
-
 
 # Fonction pour gérer les collisions entre les tirs et le joueur
 def gestion_collisions(joueur, ennemis):
@@ -207,6 +240,7 @@ def gestion_collisions(joueur, ennemis):
     for ennemi in ennemis_a_retirer:
         ennemis.remove(ennemi)
 
+
 def mapOne():
     pygame.mixer.init()
     pygame.mixer.music.load("song/game_one.mp3")
@@ -214,7 +248,8 @@ def mapOne():
     pygame.mixer.music.play(-1)
 
     joueur = Joueur(vitesse_tir_joueur=10.0)
-    nombre_ennemis = 5
+    # carre = Carre()
+    nombre_ennemis = 1
     ennemis = [Ennemi(vitesse_tir_ennemi=0.1, life=100) for _ in range(nombre_ennemis)]
     viseur = Viseur()  
     continuer = True
@@ -271,6 +306,8 @@ def mapOne():
             mapTwo()
 
         joueur.deplacer()
+        # check_collision_carre(joueur, carre)
+
         gestion_collisions(joueur, ennemis)
 
         joueur.image = joueur.obtenir_image_rotated()
@@ -283,6 +320,8 @@ def mapOne():
                         fenetre.blit(tile_image, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
 
         dessiner_entites(joueur, ennemis, tmx_data)
+
+        # carre.draw(fenetre)
 
         fenetre.blit(viseur.image, (viseur.x - viseur.rect.width // 2, viseur.y - viseur.rect.height // 2))
 
@@ -300,18 +339,19 @@ def mapOne():
 
 def mapTwo():
     pygame.mixer.init()
-    pygame.mixer.music.load("song/song_two.mp3")
+    pygame.mixer.music.load("song/game_one.mp3")
     pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)
 
     joueur = Joueur(vitesse_tir_joueur=10.0)
-    nombre_ennemis = 10
+    carre = Carre('song/kalash.png')
+    nombre_ennemis = 5
     ennemis = [Ennemi(vitesse_tir_ennemi=0.1, life=100) for _ in range(nombre_ennemis)]
-    viseur = Viseur()  
+    viseur = Viseur()
     continuer = True
     clock = pygame.time.Clock()
 
-    tmx_data = pytmx.util_pygame.load_pygame("./mapTwo/present.tmx")
+    tmx_data = pytmx.util_pygame.load_pygame("./mapOne/idk.tmx")
 
     while continuer:
         for event in pygame.event.get():
@@ -356,30 +396,26 @@ def mapTwo():
             ennemi.tirer(joueur)
             ennemi.deplacer_tirs()
 
-        joueur.deplacer()
-        gestion_collisions(joueur, ennemis)
-        joueur.image = joueur.obtenir_image_rotated()
-
-        for layer in tmx_data.layers:
-            if isinstance(layer, pytmx.TiledTileLayer):
-                for x, y, gid in layer:
-                    tile_image = tmx_data.get_tile_image_by_gid(gid)
-                    if tile_image:
-                        fenetre.blit(tile_image, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
-
-        dessiner_entites(joueur, ennemis, tmx_data)
-
-        pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
-
         if (len(ennemis) == 0):
             new_level.play()
             mapThree()
 
-        fenetre.blit(viseur.image, (viseur.x - viseur.rect.width // 2, viseur.y - viseur.rect.height // 2))
+        joueur.deplacer()
+        check_collision_carre(joueur, carre)
 
-        if (joueur.vie <= 0):
+        gestion_collisions(joueur, ennemis)
+
+        # Dessiner les entités (joueur, ennemis, tirs, carrés)
+        dessiner_entites(joueur, ennemis, tmx_data)
+
+        carre.draw(fenetre)
+
+        fenetre.blit(viseur.image, (viseur.x - viseur.rect.width // 2, viseur.y - viseur.rect.height // 2))
+        pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
+
+        if joueur.vie <= 0:
             player_dead.play()
-            jouer()
+            continuer = False
 
         texte_vie = police.render(f"Vie : {joueur.vie}", True, noir)
         fenetre.blit(texte_vie, (10, 10))
@@ -395,6 +431,7 @@ def mapThree():
     pygame.mixer.music.play(-1)
 
     joueur = Joueur(vitesse_tir_joueur=10.0)
+    carre = Carre('song/bazooka.png')
     nombre_ennemis = 2
     ennemis = [Ennemi(vitesse_tir_ennemi=0.1, life=10) for _ in range(nombre_ennemis)]
     viseur = Viseur()  
@@ -453,8 +490,11 @@ def mapThree():
             win.play() 
             jouer()
 
+        check_collision_carre(joueur, carre)
+
         joueur.deplacer()
         gestion_collisions(joueur, ennemis)
+
 
         for layer in tmx_data.layers:
             if isinstance(layer, pytmx.TiledTileLayer):
@@ -464,6 +504,8 @@ def mapThree():
                         fenetre.blit(tile_image, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
 
         dessiner_entites(joueur, ennemis, tmx_data)
+
+        carre.draw(fenetre)
 
         pygame.draw.circle(fenetre, noir, (int(viseur.x), int(viseur.y)), 5)
 
