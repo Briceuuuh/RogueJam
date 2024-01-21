@@ -28,7 +28,7 @@ rouge = (255, 128, 0)
 
 # Création de la fenêtre du jeu
 fenetre = pygame.display.set_mode((largeur_fenetre, hauteur_fenetre))
-pygame.display.set_caption("Rogue-like en Python")
+pygame.display.set_caption("Rogue-like ~ Monster's legacy")
 
 # Police pour le texte
 police = pygame.font.SysFont(None, 36)
